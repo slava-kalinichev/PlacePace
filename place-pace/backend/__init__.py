@@ -30,10 +30,16 @@ def create_app():
     CORS(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
     db.init_app(app)
     with app.app_context():
-        db.create_all()
-        for stmt in _USERS_NEW_COLUMNS + _APP_SETTINGS_NEW_COLUMNS + _ROUTES_NEW_COLUMNS:
-            db.session.execute(text(stmt))
-        db.session.commit()
+        # Воркеры gunicorn стартуют одновременно: схему создаёт один за другим
+        with db.engine.connect() as lock_conn:
+            lock_conn.execute(text("SELECT pg_advisory_lock(727001)"))
+            try:
+                db.create_all()
+                for stmt in _USERS_NEW_COLUMNS + _APP_SETTINGS_NEW_COLUMNS + _ROUTES_NEW_COLUMNS:
+                    db.session.execute(text(stmt))
+                db.session.commit()
+            finally:
+                lock_conn.execute(text("SELECT pg_advisory_unlock(727001)"))
 
     from .routes import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
