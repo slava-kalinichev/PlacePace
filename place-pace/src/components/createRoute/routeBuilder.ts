@@ -161,6 +161,8 @@ export const buildFullRoute = (ctx: BuildFullRouteContext, result: any, placesUs
       icon: 'pin',
       address: place.address || t('Адрес не указан'),
       workTime: place.work_time || '-',
+      // Часы работы на дату маршрута, по которым построено расписание (для показа)
+      workTimeDay: result.work_hours?.[String(place.id)] ?? undefined,
       time: minutesToTime(arrivalTime),
       endTime: minutesToTime(departureTime),
       cost: place.ticket_price || 0,

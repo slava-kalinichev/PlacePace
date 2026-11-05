@@ -1,5 +1,6 @@
 import React from 'react';
 import { RESTAURANT_NEW_POINT_BORDER_COLOR, RESTAURANT_ACCENT_BG } from './restaurantModel';
+import { displayedWorkTime } from '../../utils/workHours';
 
 export interface RenderRestaurantSlotPointRowContext {
   getIconForType: (_type: string, icon: string) => React.JSX.Element | null;
@@ -165,8 +166,8 @@ export const renderRestaurantSlotPointRow = (ctx: RenderRestaurantSlotPointRowCo
             <div className="overflow-hidden bg-gray-50/50" style={expandStyle}>
               <div className="pr-3 pb-2 text-sm">
                 <div className="text-gray-600">{t('Адрес: ')}{item.address || t('не указан')}</div>
-                {item.workTime && item.workTime !== '-' && (
-                  <div className="text-gray-500 text-xs mt-0.5">{t('Время работы: ')}{item.workTime}</div>
+                {displayedWorkTime(item) && displayedWorkTime(item) !== '-' && (
+                  <div className="text-gray-500 text-xs mt-0.5">{t('Время работы: ')}{displayedWorkTime(item)}</div>
                 )}
               </div>
             </div>

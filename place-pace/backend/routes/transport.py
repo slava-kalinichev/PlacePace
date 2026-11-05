@@ -139,7 +139,9 @@ def optimize_route():
             'transit_end_terminal_fare': fare['end_terminal'],
             'warnings': schedule_result['warnings'],
             # Места с праздничным предупреждением 2GIS
-            'holiday_places': schedule_result['holiday_places']
+            'holiday_places': schedule_result['holiday_places'],
+            # Часы работы, по которым строилось расписание (с учётом выбранной даты)
+            'work_hours': {str(p['id']): p.get('work_time') for p in schedule_result['valid_places']}
         }), 200
 
     except Exception as e:

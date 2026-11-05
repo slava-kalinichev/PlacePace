@@ -217,10 +217,12 @@ export const runOptimizationForPlaces = async (ctx: RunOptimizationForPlacesCont
       });
       const relaxedResult = await relaxedResponse.json();
       if (relaxedResult.success && relaxedResult.schedule?.length > 0) {
-        const lastDeparture = relaxedResult.schedule[relaxedResult.schedule.length - 1].departure;
-        let minutes = timeToMinutes(lastDeparture) - timeToMinutes(startTime);
+        const lastItem = relaxedResult.schedule[relaxedResult.schedule.length - 1];
+        let minutes = timeToMinutes(lastItem.departure) - timeToMinutes(startTime);
         if (minutes < 0) minutes += 1440; // маршрут ушёл за полночь
-        minFeasibleMinutes = minutes;
+        // Дорога от последней точки до конечного адреса тоже входит в отведённое время
+        const lastIdx = placesData.findIndex(p => p.id === lastItem.place_id);
+        minFeasibleMinutes = minutes + (lastIdx >= 0 ? endTerminalCosts?.[lastIdx] ?? 0 : 0);
       }
     } catch {
       // Отмена или сеть: остаёмся без оценки

@@ -16,6 +16,7 @@ import { api, setApiLanguage, type AuthUser, type GuestRoute, type RouteCard, ty
 import { GearIcon } from './components/sfSymbols';
 import { CHROME_Z, BACKDROP_Z, LAYER_Z_BASE, LAYER_Z_STEP, DEFAULT_HEADER_HEIGHT, DEFAULT_CAP_HEADER_HEIGHT } from './components/layerGeometry';
 import { InfoPlaqueHost, showInfoPlaque, showCancelPlaque, showBlockingConfirmPlaque } from './components/InfoPlaque';
+import { claimGuestSnapshot, saveGuestSnapshot } from './utils/guestTransfer';
 
 // Стек слоёв модальных окон: до 3 окон, интерактивно только верхнее
 type Layer =
@@ -119,6 +120,8 @@ function App() {
     walkDistanceLimitM: 800,
   });
   const [guestPreferencesTouched, setGuestPreferencesTouched] = useState(false);
+  // true - регистрация ждёт подтверждения почты, гостевые данные лежат в снимке
+  const registrationPendingRef = useRef(false);
   // 'Русский'/'English' -> код языка
   const toLanguageCode = (value: 'Русский' | 'English'): Language => (value === 'English' ? 'en' : 'ru');
   //Сохранённый язык
@@ -592,25 +595,55 @@ function App() {
     }, 1680);
   };
 
+  // Регистрация ждёт подтверждения почты: сохраняем гостевые данные
+  const handleRegistrationPending = () => {
+    registrationPendingRef.current = true;
+    if (guestRoutes.length === 0 && !guestPreferencesTouched) return;
+    saveGuestSnapshot({ routes: guestRoutes, preferences: guestPreferences, preferencesTouched: guestPreferencesTouched });
+  };
+
   const handleLogin = async (user: AuthUser) => {
+    // Данные гостя: из снимка (подтверждение почты), иначе из памяти
+    const snapshot = claimGuestSnapshot();
+    let routes = guestRoutes;
+    let preferences = guestPreferences;
+    let preferencesTouched = guestPreferencesTouched;
+    if (snapshot) {
+      routes = snapshot.routes;
+      preferences = snapshot.preferences;
+      preferencesTouched = snapshot.preferencesTouched;
+    } else if (registrationPendingRef.current) {
+      // Снимок уже забрала другая вкладка, перенос выполнен там
+      routes = [];
+      preferencesTouched = false;
+    }
+    registrationPendingRef.current = false;
+
     // Гостевые маршруты приватные: переносим их на аккаунт, они появятся в Мои
-    if (guestRoutes.length > 0) {
-      const oldestFirst = [...guestRoutes].reverse();
-      for (const route of oldestFirst) {
-        await api.createRoute(route.payload).catch(() => null);
+    if (routes.length > 0) {
+      const failed: GuestRoute[] = [];
+      for (const route of [...routes].reverse()) {
+        const result = await api.createRoute(route.payload).catch(() => null);
+        if (!result || !('success' in result)) failed.push(route);
       }
-      setGuestRoutes([]);
+      setGuestRoutes(failed);
+      if (failed.length > 0) {
+        // Непереданные маршруты сохраняем для следующей попытки
+        saveGuestSnapshot({ routes: failed, preferences, preferencesTouched: false });
+        showInfoPlaque(t('Не удалось перенести маршруты в аккаунт: {n}').replace('{n}', String(failed.length)), 'warning');
+      }
     }
 
     // Изменённые гостем настройки переносятся на аккаунт
-    if (guestPreferencesTouched) {
+    if (preferencesTouched) {
       await api.updateProfile({
-        private_terminal_enabled: guestPreferences.privateTerminal,
-        language: toLanguageCode(guestPreferences.language),
-        default_taxi_tariff: guestPreferences.defaultTaxiTariff,
-        walk_distance_limit_m: guestPreferences.walkDistanceLimitM,
+        private_terminal_enabled: preferences.privateTerminal,
+        language: toLanguageCode(preferences.language),
+        default_taxi_tariff: preferences.defaultTaxiTariff,
+        walk_distance_limit_m: preferences.walkDistanceLimitM,
       }).catch(() => null);
-      onLanguageSync(guestPreferences.language);
+      setGuestPreferences(prev => ({ ...prev, ...preferences }));
+      onLanguageSync(preferences.language);
       setGuestPreferencesTouched(false);
     }
 
@@ -909,6 +942,7 @@ function App() {
         isOpen={authLayer?.mode === 'register'}
         onClose={() => closeLayerType('auth')}
         onImmediateLogin={handleLogin}
+        onPendingConfirmation={handleRegistrationPending}
         zIndex={authPos.zIndex}
         offsetX={authPos.offsetX}
         offsetY={authPos.offsetY}

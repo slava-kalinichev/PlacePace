@@ -1,6 +1,7 @@
 // Офскрин-таблица маршрута для экспорта в PDF
 import type { RefObject, ReactNode } from 'react';
 import { TransportTimeline } from './TransportTimeline';
+import { displayedWorkTime } from '../utils/workHours';
 
 interface RouteExportSnapshotProps {
   exportRef: RefObject<HTMLDivElement | null>;
@@ -174,8 +175,8 @@ export const RouteExportSnapshot = ({
                           ) : (
                             <div className="pr-3 pb-2 text-sm">
                               <div className="text-gray-600">Адрес: {item.address || 'не указан'}</div>
-                              {item.workTime && item.workTime !== '-' && (
-                                <div className="text-gray-500 text-xs mt-0.5">Время работы: {item.workTime}</div>
+                              {displayedWorkTime(item) && displayedWorkTime(item) !== '-' && (
+                                <div className="text-gray-500 text-xs mt-0.5">Время работы: {displayedWorkTime(item)}</div>
                               )}
                             </div>
                           )}

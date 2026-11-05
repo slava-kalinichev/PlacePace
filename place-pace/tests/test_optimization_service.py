@@ -51,5 +51,21 @@ def test_visit_longer_than_opening_window_is_an_error(optimizer):
     assert 'error' in result and 'Место 1' in result['error']
 
 
+def test_end_time_includes_trip_to_end_address(optimizer):
+    # 10:00 + 10 мин дорога + 60 мин осмотр + 40 мин обратно = 11:50
+    kwargs = dict(start_terminal_costs=[10], end_terminal_costs=[40], time_limit_seconds=1)
+    too_early = optimizer.optimize_route([_place(1)], _matrix(1), '10:00', '11:45', **kwargs)
+    assert 'error' in too_early
+    enough = optimizer.optimize_route([_place(1)], _matrix(1), '10:00', '11:50', **kwargs)
+    assert enough['schedule'][0]['departure'] == '11:10'
+
+
+def test_return_after_last_closing_is_allowed_without_user_end_time(optimizer):
+    place = _place(1, '10:00-11:30')
+    result = optimizer.optimize_route([place], _matrix(1), '10:00', None,
+                                      start_terminal_costs=[10], end_terminal_costs=[60], time_limit_seconds=1)
+    assert result['schedule'][0]['departure'] == '11:10'
+
+
 def test_minutes_to_time_wraps_after_midnight(optimizer):
     assert optimizer._minutes_to_time(24 * 60 + 5) == '00:05'

@@ -35,10 +35,12 @@ interface RegisterModalProps {
   // true - слой закрыт и ждёт окна отмены, но остаётся смонтированным
   suspended?: boolean;
   onEmptyChange?: (empty: boolean) => void;
+  // Вызывается, когда регистрация ждёт подтверждения почты
+  onPendingConfirmation?: () => void;
   fullBleedMobile?: boolean;
 }
 
-const RegisterModal = ({ isOpen, onClose, onImmediateLogin, zIndex, offsetX, offsetY, isTop, depth, onHeaderHeight, suspended, onEmptyChange, fullBleedMobile }: RegisterModalProps) => {
+const RegisterModal = ({ isOpen, onClose, onImmediateLogin, zIndex, offsetX, offsetY, isTop, depth, onHeaderHeight, suspended, onEmptyChange, onPendingConfirmation, fullBleedMobile }: RegisterModalProps) => {
   const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -155,6 +157,7 @@ const RegisterModal = ({ isOpen, onClose, onImmediateLogin, zIndex, offsetX, off
     }
 
     if ('pending_email_confirmation' in result) {
+      onPendingConfirmation?.();
       setPendingEmail(result.email);
     } else {
       // Без email аккаунт активен сразу

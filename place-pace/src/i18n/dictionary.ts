@@ -525,4 +525,5 @@ export const DICTIONARY: Record<string, string> = {
   'Пока нет пройденных маршрутов': 'No completed routes yet',
   // Заглушка для удалённого маршрута
   'Маршрут удалён': 'Route deleted',
+  'Не удалось перенести маршруты в аккаунт: {n}': 'Failed to move routes to your account: {n}',
 };

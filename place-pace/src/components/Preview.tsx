@@ -34,6 +34,7 @@ import { useUiScale } from '../utils/uiScale';
 import { useTranslation } from '../i18n/LanguageContext';
 import { hourWord, minuteWord, paxWord } from '../i18n/plurals';
 import { ONIT_BOTTOMBAR_HEIGHT } from '../onit/onitLayout';
+import { displayedWorkTime } from '../utils/workHours';
 
 interface PreviewProps {
   route: RouteCard;
@@ -861,8 +862,8 @@ const Preview = ({ route, guestRoutes, isLoggedIn, onClose, onRouteDeleted, onRo
                                           ) : (
                                             <div className="pr-3 pb-2 text-sm">
                                               <div className="text-gray-600">{t('Адрес: ')}{item.address || t('не указан')}</div>
-                                              {item.workTime && item.workTime !== '-' && (
-                                                <div className="text-gray-500 text-xs mt-0.5">{t('Время работы: ')}{item.workTime}</div>
+                                              {displayedWorkTime(item) && displayedWorkTime(item) !== '-' && (
+                                                <div className="text-gray-500 text-xs mt-0.5">{t('Время работы: ')}{displayedWorkTime(item)}</div>
                                               )}
                                             </div>
                                           )}

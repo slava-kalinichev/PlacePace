@@ -2,6 +2,7 @@ import React from 'react';
 import { LEG_MORPH_DURATION_MS, LEG_COLLAPSE_EASE, LEG_OPTION_LABELS, LEG_MORPH_EASE, type LegOption, OPTION_STAGGER_MS, type PendingLegOverride } from './transportModeTypes';
 import { RESTAURANT_NEW_POINT_BORDER_COLOR, RESTAURANT_ACCENT_BG } from './restaurantModel';
 import { TransportTimeline } from '../TransportTimeline';
+import { displayedWorkTime } from '../../utils/workHours';
 
 export interface RenderRouteListContext {
   expandedRow: number | null;
@@ -246,9 +247,9 @@ export const renderRouteList = (ctx: RenderRouteListContext, interactive: boolea
                                 <div className="text-gray-600">
                                   {t('Адрес: ')}{item.address || t('не указан')}
                                 </div>
-                                {item.workTime && item.workTime !== '-' && (
+                                {displayedWorkTime(item) && displayedWorkTime(item) !== '-' && (
                                   <div className="text-gray-500 text-xs mt-0.5">
-                                    {t('Время работы: ')}{item.workTime}
+                                    {t('Время работы: ')}{displayedWorkTime(item)}
                                   </div>
                                 )}
                               </div>

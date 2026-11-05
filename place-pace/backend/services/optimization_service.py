@@ -41,9 +41,10 @@ class OptimizationService:
                 return 0
             if from_node >= num_places:
                 return start_terminal_costs[to_node] if start_terminal_costs else 0
-            if to_node >= num_places:
-                return end_terminal_costs[from_node] if end_terminal_costs else 0
             duration = places[from_node].get('recommended_duration', 60)
+            if to_node >= num_places:
+                # Дорога до конечного адреса начинается после осмотра последней точки
+                return duration + (end_terminal_costs[from_node] if end_terminal_costs else 0)
             return travel_matrix[from_node][to_node] + duration
 
         transit_callback_index = routing.RegisterTransitCallback(time_callback)
@@ -92,8 +93,8 @@ class OptimizationService:
                          f"(и, возможно, другие точки) до выбранного времени окончания маршрута"
             }
 
-        # Возвращение к терминалу финиша тоже укладывается в end_time
-        if end_terminal_costs is not None:
+        # Возвращение к конечному адресу укладывается в время окончания, заданное пользователем
+        if end_terminal_costs is not None and end_time:
             end_index = routing.End(0)
             time_dimension.CumulVar(end_index).SetRange(0, end_minutes)
 
