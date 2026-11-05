@@ -1,0 +1,13 @@
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Flask-CORS==4.0.0
+python-dotenv==1.0.0
+psycopg2-binary==2.9.7
+ortools==9.8.3296
+gunicorn==21.2.0
+requests==2.34.2
+Pillow==12.3.0
+SQLAlchemy==2.0.52
+Werkzeug==3.1.8
+pandas==3.0.5
+python-dateutil==2.9.0.post0

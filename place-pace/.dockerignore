@@ -1,0 +1,10 @@
+.git
+.idea
+.venv
+node_modules
+dist
+docker
+**/__pycache__
+.env
+.env.*
+!.env.example

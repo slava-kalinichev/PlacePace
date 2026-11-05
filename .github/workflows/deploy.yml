@@ -1,0 +1,83 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  IMAGE_PREFIX: ghcr.io/slava-kalinichev/place-pace
+  APP_DIR: /opt/place-pace
+  WEB_DIR: /var/www/place-pace
+  HEALTH_URL: https://placepace.space/api/health
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Настроить SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf 'Host target\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy_key\n  StrictHostKeyChecking yes\n' "$SSH_HOST" "$SSH_USER" > ~/.ssh/config
+
+      - name: Достать собранный фронтенд из образа
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GITHUB_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$IMAGE_PREFIX-frontend:${{ github.sha }}"
+          id=$(docker create "$IMAGE_PREFIX-frontend:${{ github.sha }}")
+          docker cp "$id:/usr/share/nginx/html" ./dist
+          docker rm "$id"
+
+      - name: Загрузить файлы на сервер
+        run: |
+          rsync -az --delete dist/ target:$WEB_DIR/dist.new/
+          scp place-pace/docker-compose.yml place-pace/docker-compose.prod.yml target:$APP_DIR/
+
+      - name: Обновить backend
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GITHUB_TOKEN" | ssh target "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+          ssh target "BACKEND_IMAGE=$IMAGE_PREFIX-backend:${{ github.sha }} APP_DIR=$APP_DIR WEB_DIR=$WEB_DIR bash -s" <<'EOF'
+          set -euo pipefail
+          cd "$APP_DIR"
+          compose="docker compose --profile routing --env-file .env.production.backend -f docker-compose.yml -f docker-compose.prod.yml"
+          # Предыдущий образ остаётся для отката
+          docker tag "$(docker inspect -f '{{.Image}}' "$($compose ps -q backend)")" place-pace-backend:prev || true
+          $compose pull backend
+          $compose up -d --no-build --no-deps backend
+          rm -rf "$WEB_DIR/dist.prev"
+          mv "$WEB_DIR/dist" "$WEB_DIR/dist.prev"
+          mv "$WEB_DIR/dist.new" "$WEB_DIR/dist"
+          EOF
+
+      - name: Проверить, что сервис отвечает
+        run: |
+          for i in $(seq 1 30); do
+            curl -fsS "$HEALTH_URL" && exit 0
+            sleep 5
+          done
+          ssh target "cd $APP_DIR && docker compose --profile routing --env-file .env.production.backend -f docker-compose.yml -f docker-compose.prod.yml logs --tail=50 backend" || true
+          exit 1
+
+      - name: Выйти из реестра
+        if: always()
+        run: ssh target "docker logout ghcr.io" || true

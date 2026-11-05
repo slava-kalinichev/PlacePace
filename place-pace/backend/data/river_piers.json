@@ -1,0 +1,24 @@
+[
+  {"id": "kievsky", "name": "Киевский", "lat": 55.7447, "lon": 37.5709},
+  {"id": "trekhgorny", "name": "Трёхгорный", "lat": 55.7461, "lon": 37.5610},
+  {"id": "city_bagration", "name": "Сити-Багратион", "lat": 55.7495, "lon": 37.5375},
+  {"id": "city_central", "name": "Сити-Центральный", "lat": 55.7505, "lon": 37.5340},
+  {"id": "kutuzovsky", "name": "Кутузовский", "lat": 55.7460, "lon": 37.5230},
+  {"id": "serdtse_stolitsy", "name": "Сердце столицы", "lat": 55.7550, "lon": 37.5150},
+  {"id": "beregovoy", "name": "Береговой", "lat": 55.7590, "lon": 37.5050},
+  {"id": "krasnopresnensky_park", "name": "Краснопресненский парк", "lat": 55.7620, "lon": 37.4950},
+  {"id": "park_fili", "name": "Парк Фили", "lat": 55.7480, "lon": 37.4850},
+
+  {"id": "zil", "name": "ЗИЛ", "lat": 55.7050, "lon": 37.6580},
+  {"id": "avtozavodsky_most", "name": "Автозаводский мост", "lat": 55.7010, "lon": 37.6620},
+  {"id": "nagatinsky_zaton", "name": "Нагатинский затон", "lat": 55.6870, "lon": 37.6720},
+  {"id": "klenovy_bulvar", "name": "Кленовый бульвар", "lat": 55.6790, "lon": 37.6800},
+  {"id": "yuzhny_rechnoy_vokzal", "name": "Южный речной вокзал", "lat": 55.6650, "lon": 37.6850},
+  {"id": "pechatniki", "name": "Печатники", "lat": 55.6800, "lon": 37.7150},
+  {"id": "zaton_novinki", "name": "Затон Новинки", "lat": 55.6900, "lon": 37.7300},
+
+  {"id": "novospassky", "name": "Новоспасский", "lat": 55.7280, "lon": 37.6560},
+  {"id": "derbenevskaya", "name": "Дербеневская набережная", "lat": 55.7220, "lon": 37.6540},
+  {"id": "simonovsky", "name": "Симоновский", "lat": 55.7130, "lon": 37.6650},
+  {"id": "torpedo", "name": "Торпедо", "lat": 55.7080, "lon": 37.6600}
+]

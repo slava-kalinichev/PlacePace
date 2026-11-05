@@ -1,0 +1,25 @@
+[
+  {
+    "id": "route1",
+    "name": "Киевский — Парк Фили",
+    "pier_ids": [
+      "kievsky", "trekhgorny", "city_bagration", "city_central",
+      "kutuzovsky", "serdtse_stolitsy", "beregovoy", "krasnopresnensky_park", "park_fili"
+    ]
+  },
+  {
+    "id": "route2",
+    "name": "ЗИЛ — Печатники",
+    "pier_ids": [
+      "zil", "avtozavodsky_most", "nagatinsky_zaton", "klenovy_bulvar",
+      "yuzhny_rechnoy_vokzal", "pechatniki", "zaton_novinki"
+    ]
+  },
+  {
+    "id": "route3",
+    "name": "Новоспасский — ЗИЛ",
+    "pier_ids": [
+      "novospassky", "derbenevskaya", "simonovsky", "torpedo", "avtozavodsky_most", "zil"
+    ]
+  }
+]

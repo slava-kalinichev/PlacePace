@@ -1,0 +1,108 @@
+# Запуск: cp .env.example .env && docker compose up --build
+# Маршрутизация (нужны данные в docker/): docker compose --profile routing up
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: place_pace
+      POSTGRES_USER: place_pace
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-place_pace_dev}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U place_pace -d place_pace"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: ${BACKEND_IMAGE:-place-pace-backend}
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
+      DATABASE_URL: postgresql://place_pace:${POSTGRES_PASSWORD:-place_pace_dev}@db:5432/place_pace
+      OSRM_URL: http://osrm:5000
+      OTP_URL: http://otp:8080
+      TRANSLATOR_URL: http://translator:5003
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/api/health')"]
+      interval: 10s
+      retries: 12
+    ports:
+      - "127.0.0.1:5001:5001"
+    restart: unless-stopped
+
+  # Разовая загрузка каталога мест
+  seed:
+    image: ${BACKEND_IMAGE:-place-pace-backend}
+    command: python scripts/load_places.py
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://place_pace:${POSTGRES_PASSWORD:-place_pace_dev}@db:5432/place_pace
+    volumes:
+      - ./scripts:/app/scripts:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: "no"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/frontend/Dockerfile
+      args:
+        VITE_YANDEX_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY:-}
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Офлайн-переводчик ru<->en (~1 ГБ памяти)
+  translator:
+    build:
+      context: .
+      dockerfile: translator/Dockerfile
+    ports:
+      - "127.0.0.1:5003:5003"
+    restart: unless-stopped
+
+  osrm:
+    profiles: [routing]
+    image: osrm/osrm-backend
+    command: osrm-routed --algorithm mld /data/central-fed-district-latest.osrm
+    volumes:
+      - ./docker/osrm-data:/data
+    ports:
+      # Только localhost: на проде порты наружу не открываются
+      - "127.0.0.1:5002:5000"
+    restart: unless-stopped
+
+  # Первый запуск собирает граф из docker/otp-data (10-30 минут, 2-4 ГБ RAM)
+  otp:
+    profiles: [routing]
+    image: opentripplanner/opentripplanner:2.9.0
+    # entrypoint-скрипт образа сам подставляет /var/opentripplanner/ как директорию - не дублируем
+    command: ["--build", "--serve", "--save"]
+    environment:
+      JAVA_OPTS: "-Xmx4G"
+    volumes:
+      - ./docker/otp-data:/var/opentripplanner
+    ports:
+      - "127.0.0.1:8080:8080"
+    restart: unless-stopped
+
+volumes:
+  pgdata:

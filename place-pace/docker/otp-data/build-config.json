@@ -1,0 +1,9 @@
+{
+  "transitServiceStart": "-P1Y",
+  "transitServiceEnd": "P1Y",
+  "areaVisibility": false,
+  "islandPruning": {
+    "islandWithStopsMaxSize": 0,
+    "islandWithoutStopsMaxSize": 10
+  }
+}
