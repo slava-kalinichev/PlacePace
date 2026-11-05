@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { api, type RouteCard, type RouteDetail, type GuestRoute } from '../api/client';
 import {
   HouseFillIcon,
@@ -328,28 +328,13 @@ const Preview = ({ route, guestRoutes, isLoggedIn, onClose, onRouteDeleted, onRo
   const MORPH_EASE = 'cubic-bezier(0.34, 1.35, 0.64, 1)';
   const PLAQUE_RADIUS = 16 * uiScale;
   const PLAQUE_SHADOW = '0 10px 40px -8px rgba(15, 23, 42, 0.28), 0 2px 8px -2px rgba(15, 23, 42, 0.12)';
-  const exportRestGap = Math.max(0, (controlsRowWidth - EXPORT_HITBOX) / 2);
   const MIDDLE_COL_WIDTH = 32 * uiScale;
   const outerTrackWidth = Math.max(0, (controlsRowWidth - MIDDLE_COL_WIDTH - CONTROLS_GAP * 2) / 2);
   const deleteRestGap = Math.max(0, outerTrackWidth - DELETE_HITBOX);
   const cursorReachOffset = Math.max(0, deleteRestGap - PILL_EDGE_GAP + DELETE_HITBOX / 2 - PILL_ICON_SIZE / 2);
-  const geometryReady = controlsRowWidth > 0;
-  // Отключаем transition при переключении fullscreen
-  const effectiveFullscreenNow = isFullscreen && isTop;
-  const prevEffectiveFullscreenRef = useRef(effectiveFullscreenNow);
-  const [suppressGeometryTransition, setSuppressGeometryTransition] = useState(false);
-  useLayoutEffect(() => {
-    if (prevEffectiveFullscreenRef.current !== effectiveFullscreenNow) {
-      prevEffectiveFullscreenRef.current = effectiveFullscreenNow;
-      setSuppressGeometryTransition(true);
-    }
-  }, [effectiveFullscreenNow]);
-  useEffect(() => {
-    if (!suppressGeometryTransition) return;
-    const t = setTimeout(() => setSuppressGeometryTransition(false), 650);
-    return () => clearTimeout(t);
-  }, [suppressGeometryTransition]);
-  const geometryTransitionsEnabled = geometryReady && !suppressGeometryTransition;
+  // Положение в покое задаётся процентами от ширины ряда и следует за вёрсткой без замеров
+  const exportRestInset = `calc(50% - ${EXPORT_HITBOX / 2}px)`;
+  const deleteRestInset = `calc((100% - ${MIDDLE_COL_WIDTH + CONTROLS_GAP * 2}px) / 2 - ${DELETE_HITBOX}px)`;
   // Максимальный первый шаг прогресса по каналу
   const MAX_DRAG_PROGRESS_JUMP = 0.15;
   // Максимальное вертикальное отклонение ведения курсора
@@ -1156,14 +1141,13 @@ const Preview = ({ route, guestRoutes, isLoggedIn, onClose, onRouteDeleted, onRo
                           style={{
                             top: 0,
                             zIndex: exportHovered ? 20 : 10,
-                            left: exportHovered ? 0 : exportRestGap,
-                            right: exportHovered ? 0 : exportRestGap,
+                            left: exportHovered ? 0 : exportRestInset,
+                            right: exportHovered ? 0 : exportRestInset,
                             height: exportHovered ? '100%' : EXPORT_HITBOX,
                             borderRadius: PLAQUE_RADIUS,
                             backgroundColor: exportHovered ? '#ffffff' : 'transparent',
                             boxShadow: exportHovered ? PLAQUE_SHADOW : 'none',
-                            // Без transition до первого измерения и при смене fullscreen
-                            transition: !geometryTransitionsEnabled ? 'none' : [
+                            transition: [
                               `left 0.45s ${MORPH_EASE}`,
                               `right 0.45s ${MORPH_EASE}`,
                               `height 0.45s ${MORPH_EASE}`,
@@ -1233,14 +1217,14 @@ const Preview = ({ route, guestRoutes, isLoggedIn, onClose, onRouteDeleted, onRo
                             style={{
                               top: 0,
                               // В покое плашка стоит в колонке 1fr
-                              right: trashHovered ? 0 : deleteRestGap,
+                              right: trashHovered ? 0 : deleteRestInset,
                               zIndex: trashHovered ? 20 : 10,
                               width: trashHovered ? '100%' : DELETE_HITBOX,
                               height: trashHovered ? '100%' : DELETE_HITBOX,
                               borderRadius: PLAQUE_RADIUS,
                               backgroundColor: trashHovered ? '#ffffff' : 'transparent',
                               boxShadow: trashHovered ? PLAQUE_SHADOW : 'none',
-                              transition: !geometryTransitionsEnabled ? 'none' : [
+                              transition: [
                                 `right 0.45s ${MORPH_EASE}`,
                                 `width 0.45s ${MORPH_EASE}`,
                                 `height 0.45s ${MORPH_EASE}`,
